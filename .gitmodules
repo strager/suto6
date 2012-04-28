@@ -1,0 +1,3 @@
+[submodule "vendor/zinnia.js"]
+	path = vendor/zinnia.js
+	url = https://github.com/strager/zinnia.js.git

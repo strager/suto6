@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<title>suto6</title>
+
+<h1>suto6</h1>
+
+<canvas width="320" height="240" id="canvas" style="border: 1px solid black;"></canvas>
+<button id="clear">Clear Strokes</button>
+<textarea cols="50" rows="20" id="output"></textarea>
+
+<script src="vendor/curl.js"></script>
+<script>curl({
+    baseUrl: 'src',
+    paths: {
+        'zinnia': '../vendor/zinnia.js/lib/zinnia',
+        'EventEmitter': '../vendor/EventEmitter'
+    }
+}, [ 'main' ]).then(function (main) {
+    main();
+});
+</script>
+
+<script>
+(function () {
+
+    // Show console.log for mobile devices
+    function stringify(x) {
+        if (x === null) return "null";
+        if (typeof x === "undefined") return "undefined";
+        return String(x);
+    }
+
+    function stringifyArgs(args) {
+        return Array.prototype.map.call(args, stringify).join(" ");
+    }
+
+    function id(x) { return x; }
+
+    var outputEl = document.getElementById('output');
+
+    var originalConsoleLog = console.log || id;
+    console.log = function (/* ... */) {
+        outputEl.value += stringifyArgs(arguments) + "\n";
+        outputEl.scrollTop = outputEl.scrollHeight;
+        return originalConsoleLog.apply(this, arguments);
+    };
+
+    var originalConsoleError = console.error || id;
+    console.error = function (/* ... */) {
+        outputEl.value += "ERROR: " + stringifyArgs(arguments) + "\n";
+        return originalConsoleError.apply(this, arguments);
+    };
+
+    window.onerror = function (/* ... */) {
+        // Manual .bind (iOS doesn't have it)
+        console.error.apply(console, arguments);
+    };
+
+}());
+</script>
