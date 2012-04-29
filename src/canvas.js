@@ -122,11 +122,8 @@ define([
 
         var render_scratch = [ ];
         function render(id) {
-            //ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             var s = strokes[id].slice();
             var sLength = s.length;
-
-            var i;
 
             // We need at least three points (two segments)
             // to interpolate the first segment.
@@ -153,7 +150,7 @@ define([
             } else {
                 // If the direction changes,
                 // we need to insert a new point.
-                i = sLength - 8;
+                var i = sLength - 8;
 
                 var x1 = s[i + 0], y1 = s[i + 1];
                 var x2 = s[i + 2], y2 = s[i + 3];
@@ -173,12 +170,6 @@ define([
                 );
 
                 if (c12 * c23 < 0) {
-                    s.splice(
-                        i + 4, 0,
-                        (s[i + 2] + s[i + 4]) / 2,
-                        (s[i + 3] + s[i + 5]) / 2
-                    );
-
                     var xC = (x2 + x3) / 2;
                     var yC = (y2 + y3) / 2;
 
