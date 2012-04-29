@@ -24,107 +24,187 @@ define([
             });
         }
 
+        // Interpolates a line p2p3 based on
+        // p1 and p4 and yields a control point.
+        var interpolatedControl_p2Bisector = [ ];
+        var interpolatedControl_p3Bisector = [ ];
+        function interpolatedControl_(
+            x1, y1,  // p1
+            x2, y2,  // p2
+            x3, y3,  // p3
+            x4, y4,  // p4
+            out
+        ) {
+            geom.linesBisector_(
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                interpolatedControl_p2Bisector
+            );
+            geom.linesBisector_(
+                x2, y2,
+                x3, y3,
+                x4, y4,
+                interpolatedControl_p3Bisector
+            );
+
+            geom.lineIntersection_(
+                x2 - interpolatedControl_p2Bisector[1], y2 + interpolatedControl_p2Bisector[0],
+                x2, y2,
+
+                x3, y3,
+                x3 - interpolatedControl_p3Bisector[1], y3 + interpolatedControl_p3Bisector[0],
+
+                out
+            );
+        }
+
+        // Interpolates a line p1p2 based on
+        // p3 and yields a control point.
+        var interpolatedControlEdge_p2Bisector = [ ];
+        function interpolatedControlEdge_(
+            x1, y1,  // p1
+            x2, y2,  // p2
+            x3, y3,  // p3
+            out
+        ) {
+            geom.linesBisector_(
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                interpolatedControlEdge_p2Bisector
+            );
+
+            // Centre of first segment
+            var s1cX = (x1 + x2) / 2;
+            var s1cY = (y1 + y2) / 2;
+
+            // Vector of first segment
+            var s1dX = x1 - x2;
+            var s1dY = y1 - y2;
+
+            // We draw a line from the bisector of the
+            // first segment and intersect it with the
+            // perpendicular bisector of p2.
+            geom.lineIntersection_(
+                s1cX, s1cY,
+                s1cX - s1dY, s1cY + s1dX,
+
+                x2, y2,
+                x2 - interpolatedControlEdge_p2Bisector[1], y2 + interpolatedControlEdge_p2Bisector[0],
+
+                out
+            );
+        }
+
+        // Draws a line p2p3 interpolating based on
+        // p1 and p4.
+        var drawInterpolated_control = [ ];
+        function drawInterpolated(
+            x1, y1,  // p1
+            x2, y2,  // p2
+            x3, y3,  // p3
+            x4, y4   // p4
+        ) {
+            interpolatedControl_(
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                x4, y4,
+                drawInterpolated_control
+            );
+
+            ctx.quadraticCurveTo(
+                drawInterpolated_control[0], drawInterpolated_control[1],
+                x3, y3
+            );
+        }
+
+        var render_scratch = [ ];
         function render(id) {
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            //ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             var s = strokes[id].slice();
+            var sLength = s.length;
 
             var i;
 
-            var controlPoints = [ ];
-            var p1Bisector = [ ];
-            var p2Bisector = [ ];
+            // We need at least three points (two segments)
+            // to interpolate the first segment.
+            if (sLength < 6) {
+                return;
+            }
 
-            for (i = 0; i + 6 < s.length; i += 2) {
-                var v1X = s[i + 0] - s[i + 2];
-                var v1Y = s[i + 1] - s[i + 3];
+            ctx.beginPath();
+            ctx.moveTo(s[sLength - 6], s[sLength - 5]);
 
-                var v2X = s[i + 2] - s[i + 4];
-                var v2Y = s[i + 3] - s[i + 5];
+            // First segment (special case)
+            if (sLength === 6) {
+                interpolatedControlEdge_(
+                    s[0], s[1],
+                    s[2], s[3],
+                    s[4], s[5],
+                    render_scratch
+                );
 
-                var v3X = s[i + 4] - s[i + 6];
-                var v3Y = s[i + 5] - s[i + 7];
+                ctx.quadraticCurveTo(
+                    render_scratch[0], render_scratch[1],
+                    s[2], s[3]
+                );
+            } else {
+                // If the direction changes,
+                // we need to insert a new point.
+                i = sLength - 8;
 
-                var c12 = geom.cross(v1X, v1Y, v2X, v2Y);
-                var c23 = geom.cross(v2X, v2Y, v3X, v3Y);
+                var x1 = s[i + 0], y1 = s[i + 1];
+                var x2 = s[i + 2], y2 = s[i + 3];
+                var x3 = s[i + 4], y3 = s[i + 5];
+                var x4 = s[i + 6], y4 = s[i + 7];
+
+                var v2X = x2 - x3;
+                var v2Y = y2 - y3;
+
+                var c12 = geom.cross(
+                    x1 - x2, y1 - y2,
+                    v2X, v2Y
+                );
+                var c23 = geom.cross(
+                    v2X, v2Y,
+                    x3 - x4, y3 - y4
+                );
+
                 if (c12 * c23 < 0) {
                     s.splice(
                         i + 4, 0,
                         (s[i + 2] + s[i + 4]) / 2,
                         (s[i + 3] + s[i + 5]) / 2
                     );
+
+                    var xC = (x2 + x3) / 2;
+                    var yC = (y2 + y3) / 2;
+
+                    drawInterpolated(
+                        x1, y1,
+                        x2, y2,
+                        xC, yC,
+                        x3, y3
+                    );
+
+                    drawInterpolated(
+                        x2, y2,
+                        xC, yC,
+                        x3, y3,
+                        x4, y4
+                    );
+                } else {
+                    drawInterpolated(
+                        x1, y1,
+                        x2, y2,
+                        x3, y3,
+                        x4, y4
+                    );
                 }
             }
 
-            geom.linesBisector_(
-                s[0], s[1],  // p0
-                s[2], s[3],  // p1
-                s[4], s[5],  // p2
-                p1Bisector
-            );
-
-            var p0cX = (s[0] + s[2]) / 2;
-            var p0cY = (s[1] + s[3]) / 2;
-            var p0dX = s[0] - s[2];
-            var p0dY = s[1] - s[3];
-
-            var p = geom.lineIntersection(
-                p0cX, p0cY,
-                p0cX - p0dY, p0cY + p0dX,
-
-                s[2], s[3],
-                s[2] - p1Bisector[1], s[3] + p1Bisector[0]
-            );
-            controlPoints.push(p);
-
-            for (i = 2; i + 4 < s.length; i += 2) {
-                geom.linesBisector_(
-                    s[i + 0], s[i + 1],  // p1
-                    s[i + 2], s[i + 3],  // p2
-                    s[i + 4], s[i + 5],  // p3
-                    p2Bisector
-                );
-
-                var p = geom.lineIntersection(
-                    s[i + 0] - p1Bisector[1], s[i + 1] + p1Bisector[0],
-                    s[i + 0], s[i + 1],  // p1
-
-                    s[i + 2], s[i + 3],  // p2
-                    s[i + 2] - p2Bisector[1], s[i + 3] + p2Bisector[0]
-                );
-                controlPoints.push(p);
-
-                // Swap
-                var tmpX = p1Bisector[0];
-                p1Bisector[0] = p2Bisector[0];
-                p2Bisector[0] = tmpX;
-
-                var tmpY = p1Bisector[1];
-                p1Bisector[1] = p2Bisector[1];
-                p2Bisector[1] = tmpY;
-            }
-
-            var p2cX = (s[i + 0] + s[i + 2]) / 2;
-            var p2cY = (s[i + 1] + s[i + 3]) / 2;
-            var p2dX = s[i + 0] - s[i + 2];
-            var p2dY = s[i + 1] - s[i + 3];
-
-            controlPoints.push(geom.lineIntersection(
-                p2cX, p2cY,
-                p2cX - p2dY, p2cY + p2dX,
-
-                s[i + 0], s[i + 1],
-                s[i + 0] - p1Bisector[1], s[i + 1] + p1Bisector[0]
-            ));
-
-            ctx.beginPath();
-            ctx.moveTo(s[0], s[1]);
-            for (i = 2; i < s.length; i += 2) {
-                var control = controlPoints[i / 2 - 1];
-                ctx.quadraticCurveTo(
-                    control[0], control[1],
-                    s[i + 0], s[i + 1]
-                );
-            }
             ctx.stroke();
         }
 

@@ -39,9 +39,18 @@ define([
             );
         }
 
+        var skip = 0;
         function moveE(e) {
             var id = getID(e);
             if (isDown[id]) {
+                // TEMPORARY HACK
+                if (window.SIMULATE_LAG) {
+                    ++skip;
+                    if (skip % 5 > 0) {
+                        return;
+                    }
+                }
+
                 emitter.emit(
                     'move',
                     id,
