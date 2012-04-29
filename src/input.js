@@ -21,11 +21,11 @@ define([
         }
 
         function getX(pseudoEvent) {
-            return pseudoEvent.clientX - element.offsetLeft;
+            return pseudoEvent.pageX - element.clientLeft - element.offsetLeft;
         }
 
         function getY(pseudoEvent) {
-            return pseudoEvent.clientY - element.offsetTop;
+            return pseudoEvent.pageY - element.clientTop - element.offsetTop;
         }
 
         function downE(e) {
