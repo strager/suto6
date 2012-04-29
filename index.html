@@ -7,7 +7,7 @@
 <canvas width="320" height="320" id="canvas" style="border: 1px solid black;"></canvas>
 <button id="clear">Clear Strokes</button>
 <!-- TEMPORARY HACK -->
-<label><input type="checkbox" onchange="javascript:window.SIMULATE_LAG = !!this.value; return true;"> Simulate lag</label>
+<label><input type="checkbox" onchange="javascript:window.SIMULATE_LAG = !!this.checked; return true;"> Simulate lag</label>
 <textarea cols="50" rows="20" id="output"></textarea>
 
 <script src="vendor/curl.js"></script>
