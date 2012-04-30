@@ -59,7 +59,7 @@ define([
                 interpolatedControl_p3Bisector
             );
 
-            geom.lineIntersection_(
+            return geom.lineIntersection_(
                 x2 - interpolatedControl_p2Bisector[1], y2 + interpolatedControl_p2Bisector[0],
                 x2, y2,
 
@@ -97,7 +97,7 @@ define([
             // We draw a line from the bisector of the
             // first segment and intersect it with the
             // perpendicular bisector of p2.
-            geom.lineIntersection_(
+            return geom.lineIntersection_(
                 s1cX, s1cY,
                 s1cX - s1dY, s1cY + s1dX,
 
@@ -117,7 +117,7 @@ define([
             x3, y3,  // p3
             x4, y4   // p4
         ) {
-            interpolatedControl_(
+            var hasControl = interpolatedControl_(
                 x1, y1,
                 x2, y2,
                 x3, y3,
@@ -125,10 +125,14 @@ define([
                 drawInterpolated_control
             );
 
-            ctx.quadraticCurveTo(
-                drawInterpolated_control[0], drawInterpolated_control[1],
-                x3, y3
-            );
+            if (hasControl) {
+                ctx.quadraticCurveTo(
+                    drawInterpolated_control[0], drawInterpolated_control[1],
+                    x3, y3
+                );
+            } else {
+                ctx.lineTo(x3, y3);
+            }
         }
 
         var render_scratch = [ ];
@@ -147,17 +151,21 @@ define([
 
             // First segment (special case)
             if (sLength === 6) {
-                interpolatedControlEdge_(
+                var hasControl = interpolatedControlEdge_(
                     s[0], s[1],
                     s[2], s[3],
                     s[4], s[5],
                     render_scratch
                 );
 
-                ctx.quadraticCurveTo(
-                    render_scratch[0], render_scratch[1],
-                    s[2], s[3]
-                );
+                if (hasControl) {
+                    ctx.quadraticCurveTo(
+                        render_scratch[0], render_scratch[1],
+                        s[2], s[3]
+                    );
+                } else {
+                    ctx.lineTo(s[2], s[3]);
+                }
             } else {
                 // If the direction changes,
                 // we need to insert a new point.
