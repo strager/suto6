@@ -16,6 +16,17 @@ define([
         // Map InputID (FlatArray (x, y))
         var strokes = { };
 
+        function addPoint(id, x, y) {
+            var s = strokes[id];
+            var sLength = s.length;
+
+            var isDuplicate = s[sLength - 2] === x && s[sLength - 1] === y;
+            if (!isDuplicate) {
+                strokes[id].push(x, y);
+                render(id);
+            }
+        }
+
         function detach() {
             touchInput.detach();
 
@@ -205,19 +216,11 @@ define([
         });
 
         touchInput.on('move', function on_move(id, x, y) {
-            var s = strokes[id];
-            var sLength = s.length;
-
-            var isDuplicate = s[sLength - 2] === x && s[sLength - 1] === y;
-            if (!isDuplicate) {
-                strokes[id].push(x, y);
-                render(id);
-            }
+            addPoint(id, x, y);
         });
 
         touchInput.on('up', function on_end(id, x, y) {
-            strokes[id].push(x, y);
-            render(id);
+            addPoint(id, x, y);
 
             var stroke = strokes[id];
             emitter.emit('stroke', stroke);
